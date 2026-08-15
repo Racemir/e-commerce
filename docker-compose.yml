@@ -1,0 +1,40 @@
+services:
+
+  # Veritabanı servisim
+  postgres:
+    image: postgres:18.4
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: ecommerce
+    ports:
+      - "5432:5432"
+
+  # Redis servisim
+  redis:
+    image: redis:8.8-alpine
+    ports:
+      - "6379:6379"
+
+  # Mailpit servisim
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
+  worker:
+    build: .
+    command: [ "./ecommerce", "worker" ]
+    depends_on:
+      - postgres
+      - redis
+
+  # Go uygulamam
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
