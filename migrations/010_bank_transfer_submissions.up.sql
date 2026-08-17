@@ -9,5 +9,5 @@ CREATE TABLE bank_transfer_submissions(
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Madde 111 Kuralı: Hızlı Arama Fihristi
+
 CREATE INDEX idx_bank_transfer_submissions_payment_id ON bank_transfer_submissions(payment_id);
