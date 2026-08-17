@@ -17,6 +17,3 @@ CREATE TABLE product_translations(
     description TEXT NOT NULL, -- Ürünün o dildeki uzun açıklaması ve detayları
     UNIQUE(product_id, locale) -- Güvenlik Kilidi: Bir ürünün aynı dilde iki farklı çeviri kaydı olmasını engeller
 );
-
--- Hızlı Arama Fihristi (Madde 111 Kuralı)
-CREATE INDEX idx_products_slug ON products(slug); -- Link üzerinden (slug) bir ürün arandığında saniyeler içinde bulmak için fihrist oluşturur

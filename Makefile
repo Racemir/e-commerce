@@ -3,7 +3,12 @@ APP_NAME=ecommerce
 MAIN_FILE=cmd/ecommerce/main.go
 
 # Bu hedefler gerçek dosya değil.
-.PHONY: help dev build cclean up down
+.PHONY: help dev build clean up down
+
+## clean: Derlenmiş eski dosyaları temizler.
+clean:
+	@echo "Derlenmiş dosyalar temizleniyor."
+	rm -f $(APP_NAME)
 
 ## help: Kullanılabilecek komutları listeler.
 help:
