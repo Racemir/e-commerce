@@ -5,11 +5,6 @@ MAIN_FILE=cmd/ecommerce/main.go
 # Bu hedefler gerçek dosya değil.
 .PHONY: help dev build clean up down
 
-## clean: Derlenmiş eski dosyaları temizler.
-clean:
-	@echo "Derlenmiş dosyalar temizleniyor."
-	rm -f $(APP_NAME)
-
 ## help: Kullanılabilecek komutları listeler.
 help:
 	@echo "Kullanılabilecek Komutlar:"
@@ -18,7 +13,7 @@ help:
 ## dev: Uygulamayı geliştirme modunda başlatır.
 dev:
 	@echo "Uygulama Başlatılıyor."
-	go run $(MAIN_FILE)
+	go run $(MAIN_FILE) server
 
 ## build: Uygulamayı tek bir çalıştırılabilir dosya olarak derler.
 build:
@@ -26,6 +21,7 @@ build:
 	go build -o $(APP_NAME) $(MAIN_FILE)
 
 ## clean: Derlenmiş eski dosyaları temizler.
+clean:
 	@echo "Derlenmiş dosyalar temizleniyor."
 	rm -f $(APP_NAME)
 
@@ -38,3 +34,13 @@ up:
 down:
 	@echo "Servisler Durduruluyor."
 	docker compose down
+
+## migrate: Tablolar oluşturulur.
+migrate: 
+	@echo "Migration UP işlemi başlatılıyor..."
+	go run $(MAIN_FILE) migrate
+
+## migrate-down: Oluşturulan tablolar silinir.
+migrate-down: 
+	@echo "Migration DOWN işlemi başlatılıyor..."
+	go run $(MAIN_FILE) migrate-down
