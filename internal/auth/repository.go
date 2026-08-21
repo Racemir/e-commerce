@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -52,5 +53,49 @@ func CreateVerificationToken(ctx context.Context, db *pgxpool.Pool, userID int, 
 		return execError
 	}
 
+	return nil
+}
+
+// VerifyEmailToken, verilen token'ı veritabanında arar ve geçerliyse kullanıcıyı onaylar.
+func VerifyEmailToken(ctx context.Context, db *pgxpool.Pool, token string) error {
+	// ard arda yapacağıız işlemler var (Transaction) hepsi tamamlanana kadar bekle
+	tx, beginError := db.Begin(ctx)
+	if beginError != nil {
+		return fmt.Errorf("Transaction could not be started/İşlem başlatılamadı.:%w", beginError)
+	}
+	// Fonksiyon bittiğinde comit edilmemeişse iptal et
+	defer tx.Rollback(ctx)
+
+	var userId int
+
+	// Token geçerli mi diye bakıp kime ait olduğunu buluyorum.
+	querRowError := tx.QueryRow(ctx, `
+	SELECT user_id FROM email_verification_tokens
+	WHERE token = $1 AND expires_at > NOw()`, token).Scan(&userId)
+	// expires_at > NOw():Son kullanma tarihi (expires_at), şu Anki zamandan (NOW()) daha ileri bir tarih olan
+	if querRowError != nil {
+		return fmt.Errorf("Invalid or expired token/Geçersiz veya süresi dolmuş token")
+	}
+
+	//Kullanıcının e-postasını onayladığı tam tarihi ve saati veritabanına yazıyoruz.
+	_, execError := tx.Exec(ctx, `UPDATE users
+	SET email_verified_at = NOW(), update_at = NOW()
+	WHERE id = $1`, userId)
+	if execError != nil {
+		return fmt.Errorf("User could not be updated/kullanici guncellenemedi: %w")
+	}
+
+	// Kullanılan token'ı siliyoruz
+	if _, execErr := tx.Exec(ctx, `
+	DELETE FROM email_verification_tokens
+	WHERE token = $1`, token); execErr != nil {
+		return fmt.Errorf("Token could not be deleted/token silinemedi", execErr)
+	}
+
+	// Az önce sırayla yaptığımz işlemlerde bir patlak yoksa veritabanına kaydet
+	commitError := tx.Commit(ctx)
+	if commitError != nil {
+		return fmt.Errorf("The operation could not be saved/islem kaydedilemedi")
+	}
 	return nil
 }
