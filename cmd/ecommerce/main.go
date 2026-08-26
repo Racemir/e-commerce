@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/Racemir/e-commerce/internal/database"
 	"github.com/Racemir/e-commerce/internal/server"
+	gracefulshutdown "github.com/quii/go-graceful-shutdown"
 )
 
 func main() {
@@ -33,20 +35,32 @@ func main() {
 	}
 	defer rdb.Close()
 
+	// Argüman kontolü
+	if len(os.Args) < 2 {
+		fmt.Println("Kullanım: go run main.go [server|migrate|migrate-down]")
+		return
+	}
+
 	// /api/health, / gibi yolların bağlı olduğu yönlendiriciyi (mux) alıyoruz.
 	switch os.Args[1] {
 	case "server":
 		mux := server.SetupRoutes(dbPool, rdb)
 		fmt.Println("Server 8080 portunda çalışıyor")
-
+		ctx := context.Background()
+		httpServer := &http.Server{
+			Addr:    ":8080",
+			Handler: mux,
+		}
+		gserver := gracefulshutdown.NewServer(httpServer)
 		// http.ListenAndServe: Sunucuyu belirtilen portta (8080) başlatır ve gelen istekleri dinlemeye başlar.
 		// İkinci parametre olarak hazırladığımız yönlendiriciyi (mux) veriyoruz ki istekler doğru yerlere gitsin.
 		// Bu satır bloklayıcıdır (blocking). Yani program burada sürekli bekler ve çalışmaya devam eder.
-		listenAndServeErr := http.ListenAndServe(":8080", mux)
+		listenAndServeErr := gserver.ListenAndServe(ctx)
 		// 8080 portu başka bir uygulama tarafından kullanılıyorsa
 		if listenAndServeErr != nil {
-			fmt.Print("Sunucu Başlatılamadı: %v", listenAndServeErr)
+			log.Fatalf("An error occurred while the server was shutting down (some requests may have been left incomplete)/Sunucu kapanırken hata oluştu (bazı istekler yarım kalmış olabilir): %v", listenAndServeErr)
 		}
+		fmt.Println("The server was shut down safely/Sunucu güvenli bir şekilde kapatıldı")
 
 	case "migrate":
 
