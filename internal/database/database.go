@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
@@ -28,10 +29,15 @@ func ConnectionPool(dbURL string) (*pgxpool.Pool, error) {
 }
 
 func ConnectionRedis() (*redis.Client, error) {
+	redisAddr := os.Getenv("REDIS_ADDRESS")
+	if redisAddr == "" {
+		redisAddr = "localhost:6379"
+	}
+
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379", // Docker-compose dosyasında belirlediğimiz port
-		Password: "",               // Şifre belirlemediğimiz için boş
-		DB:       0,                // Varsayılan veritabanı numarası
+		Addr:     redisAddr, // Docker-compose dosyasında belirlediğimiz port
+		Password: "",        // Şifre belirlemediğimiz için boş
+		DB:       0,         // Varsayılan veritabanı numarası
 	})
 
 	// context.Background() kullanarak basit bir ping atıyoruz

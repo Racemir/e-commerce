@@ -9,6 +9,11 @@ services:
       POSTGRES_DB: ecommerce
     ports:
       - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d ecommerce"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
 
   # Redis servisim
   redis:
@@ -23,18 +28,28 @@ services:
       - "8025:8025"
       - "1025:1025"
 
-  worker:
-    build: .
-    command: [ "./ecommerce", "worker" ]
-    depends_on:
-      - postgres
-      - redis
-
   # Go uygulamam
   app:
     build: .
     ports:
       - "8080:8080"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      - DATABASE_URL=postgres://admin:secretpassword@postgres:5432/ecommerce?sslmode=disable
+      - REDIS_ADDRESS=redis:6379
+
+  worker:
+    build: .
+    command: [ "./ecommerce", "worker" ]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      - DATABASE_URL=postgres://admin:secretpassword@postgres:5432/ecommerce?sslmode=disable
+      - REDIS_ADDRESS=redis:6379

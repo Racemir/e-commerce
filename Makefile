@@ -44,3 +44,18 @@ migrate:
 migrate-down: 
 	@echo "Migration DOWN işlemi başlatılıyor..."
 	go run $(MAIN_FILE) migrate-down
+
+## create-admin: Sisteme yetkili bir admin kullanıcısı ekler.
+create-admin:
+	@echo "Admin kullanıcısı oluşturuluyor..."
+	go run $(MAIN_FILE) create-admin
+
+## seed: Veritabanını sahte/test verileriyle doldurur.
+seed:
+	@echo "Veritabanına sahte veriler (seed) ekleniyor..."
+	go run $(MAIN_FILE) seed
+
+## lint: Kodda olası hataları ve kötü kullanımları tarar.
+lint:
+	@echo "Linter çalıştırılıyor..."
+	go vet ./...

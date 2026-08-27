@@ -37,4 +37,4 @@ COPY --from=builder /app/ecommerce .
 EXPOSE 8080
 
 # Sunucu ayağa kalktığında porgramı çalıştırıyorum.
-CMD ["./ecommerce"]
+CMD ["./ecommerce","server"]

@@ -46,17 +46,22 @@ func main() {
 	case "server":
 		mux := server.SetupRoutes(dbPool, rdb)
 		fmt.Println("Server 8080 portunda çalışıyor")
+
+		// Kapanma sürecini yöneten context
 		ctx := context.Background()
+
+		// Standart GO HTTP sunucusu
 		httpServer := &http.Server{
 			Addr:    ":8080",
 			Handler: mux,
 		}
+
+		// Graceful shutdown kütüphanesinden yeni bir sunucu oluşturur.
 		gserver := gracefulshutdown.NewServer(httpServer)
-		// http.ListenAndServe: Sunucuyu belirtilen portta (8080) başlatır ve gelen istekleri dinlemeye başlar.
-		// İkinci parametre olarak hazırladığımız yönlendiriciyi (mux) veriyoruz ki istekler doğru yerlere gitsin.
-		// Bu satır bloklayıcıdır (blocking). Yani program burada sürekli bekler ve çalışmaya devam eder.
+
+		// Sunucuyu başlatır ve kapanma sinyallerini dinlemeye başlar.
 		listenAndServeErr := gserver.ListenAndServe(ctx)
-		// 8080 portu başka bir uygulama tarafından kullanılıyorsa
+
 		if listenAndServeErr != nil {
 			log.Fatalf("An error occurred while the server was shutting down (some requests may have been left incomplete)/Sunucu kapanırken hata oluştu (bazı istekler yarım kalmış olabilir): %v", listenAndServeErr)
 		}
@@ -66,20 +71,22 @@ func main() {
 
 		runMigrationsUpError := database.RunMigrationsUp(dbURL)
 		if runMigrationsUpError != nil {
-			log.Fatalf("Migration up hatası: %v", runMigrationsUpError)
+			log.Fatalf("Migration up error/Migration up hatası: %v", runMigrationsUpError)
 		}
 
-		fmt.Println("Migration işlemi başarıyla tamamlandı.")
+		fmt.Println("The migration process was completed successfully/Migration işlemi başarıyla tamamlandı.")
 
 	case "migrate-down":
 
 		runMigrationsDownError := database.RunMigrationsDown(dbURL)
 		if runMigrationsDownError != nil {
-			log.Fatalf("Migration down hatası: %v", runMigrationsDownError)
+			log.Fatalf("Migration down error/Migration down hatası: %v", runMigrationsDownError)
 		}
-		fmt.Println("Sistem başarıyla geri alındı")
+		fmt.Println("The system was successfully restored/Sistem başarıyla geri alındı")
+	case "seed":
+	case "worker":
+	case "create-admin":
 	default:
 		log.Fatalf("Unknown command")
 	}
-
 }
