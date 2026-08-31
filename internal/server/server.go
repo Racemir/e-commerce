@@ -25,6 +25,8 @@ func SetupRoutes(db *pgxpool.Pool, rdb *redis.Client) *http.ServeMux {
 	mux.HandleFunc("/", homePageHandler)
 	mux.HandleFunc("/api/health", HealthHandler)
 	mux.HandleFunc("/api/auth/register", authHandler.Register)
+	mux.HandleFunc("/api/auth/verify-email", authHandler.VerifyEmail)
+	mux.HandleFunc("/api/auth/login", authHandler.Login)
 
 	return mux
 }

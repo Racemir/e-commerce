@@ -36,7 +36,11 @@ func (m MailSender) SendEmail(to, subject, body string) error {
 	msg := buildMessage(to, subject, body)
 
 	// Kullanıcı adı ve şifre kullanarak basit bir kimlik doğrulama mekanizması sağlar
-	auth := smtp.PlainAuth("", m.Username, m.Password, m.Host)
+	// Mailpit gibi geliştirme SMTP sunucuları AUTH desteklemez, bu yüzden username boşsa auth=nil
+	var auth smtp.Auth
+	if m.Username != "" {
+		auth = smtp.PlainAuth("", m.Username, m.Password, m.Host)
+	}
 
 	// Sunucu adresi formatını "Host:Port" ,localhost:1025
 	address := fmt.Sprintf("%s:%s", m.Host, m.Port)

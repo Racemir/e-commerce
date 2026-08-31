@@ -24,8 +24,8 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	// Json verisini tutacak boş nesne.
 	var req RegisterRequest
 
-	newDecoderErr := json.NewDecoder(r.Body).Decode(&req)
-	if newDecoderErr != nil {
+	newDecoderError := json.NewDecoder(r.Body).Decode(&req)
+	if newDecoderError != nil {
 		http.Error(w, "Invalid JSON format/Geçersiz JSON formatı", http.StatusBadRequest)
 		return
 	}
