@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-// Me, oturum açmış olan mevcut kullanıcının bilgilerini döner. (PDF Madde 34 - Current User)
+// Me, oturum açmış olan mevcut kullanıcının bilgilerini döner. (Current User)
 //
 // Akış:
 //  İstekten session cookie'sini oku

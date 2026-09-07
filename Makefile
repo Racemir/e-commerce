@@ -59,3 +59,8 @@ seed:
 lint:
 	@echo "Linter çalıştırılıyor..."
 	go vet ./...
+
+## tidy: Modüller temizlenir.
+tidy:
+	@echo "Modüller düzenleniyor..."
+	go mod tidy

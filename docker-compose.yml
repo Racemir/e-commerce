@@ -38,10 +38,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-    environment:
-      - DATABASE_URL=postgres://admin:secretpassword@postgres:5432/ecommerce?sslmode=disable
-      - REDIS_ADDRESS=redis:6379
-      - JWT_SECRET_KEY=bL1FqlpdbL+8oEceUTzQC02IlCK4B51UJUj3r8XI5gE=
+    env_file:
+      - .env
 
   worker:
     build: .
@@ -51,7 +49,5 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-    environment:
-      - DATABASE_URL=postgres://admin:secretpassword@postgres:5432/ecommerce?sslmode=disable
-      - REDIS_ADDRESS=redis:6379
-      - JWT_SECRET_KEY=bL1FqlpdbL+8oEceUTzQC02IlCK4B51UJUj3r8XI5gE=
+    env_file:
+      - .env

@@ -138,6 +138,23 @@ func main() {
 
 				log.Printf("Doğrulama e-postası gönderildi: %s\n", payload.Email)
 			}
+
+			if payload.Type == "send_password_reset_email" {
+				verificationLink := fmt.Sprintf("http://localhost:8080/api/auth/reset-password?token=%s", payload.Token)
+
+				subject := "Şifre Sıfırlama / Password Reset"
+				body := fmt.Sprintf("Merhaba,\n\nŞifrenizi sıfırlamak için bu linke tıklayın:\n%s", verificationLink)
+
+				// mail.NewMailSender ile bir gönderici oluştur, sonra SendEmail ile gönder
+				sender := mail.NewMailSender("mailpit", "1025", "", "", "noreply@ecommerce.com")
+				sendErr := sender.SendEmail(payload.Email, subject, body)
+				if sendErr != nil {
+					log.Println("E-posta gönderilemedi:", sendErr)
+					continue
+				}
+
+				log.Printf("Şifre sıfırlama e-postası gönderildi: %s\n", payload.Email)
+			}
 		}
 	case "create-admin":
 	default:

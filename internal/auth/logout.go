@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-// Logout, kullanıcının oturumunu sonlandırır. (PDF Madde 35)
+// Logout, kullanıcının oturumunu sonlandırır.
 //
 // Akış:
 //  1. Cookie'den session ID'yi oku

@@ -3,6 +3,7 @@ package auth
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 )
 
 // email ve şifre al
@@ -66,6 +67,27 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Token creation error/Token oluşturma hatası", http.StatusInternalServerError)
 		return
 	}
+
+	// Oturum (Session) oluştur ve Redis'e kaydet (PDF Madde 34 & 35 gereksinimi)
+	sessionID, generateSessionError := GenerateSecureToken()
+	if generateSessionError != nil {
+		http.Error(w, "Session generation error/Oturum anahtarı üretilemedi", http.StatusInternalServerError)
+		return
+	}
+
+	sessionData := SessionData{
+		UserID: user.ID,
+		Role:   user.Role,
+	}
+
+	createSessionError := CreateSession(r.Context(), h.RDB, sessionID, sessionData, 24*time.Hour)
+	if createSessionError != nil {
+		http.Error(w, "Session could not be created/Oturum oluşturulamadı", http.StatusInternalServerError)
+		return
+	}
+
+	// Tarayıcıya güvenli session cookie'sini gönder
+	SetSessionCookie(w, sessionID)
 
 	// Tokenı response body'e koy.
 	w.Header().Set("Content-Type", "application/json")

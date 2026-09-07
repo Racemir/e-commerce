@@ -1,0 +1,33 @@
+# Ortam değişkenleri (hassas bilgiler - ASLA github'a gitmemeli)
+.env
+
+# Derlenmiş Go binary dosyaları
+ecommerce
+*.exe
+*.out
+*.test
+
+# Go build önbelleği
+/vendor/
+
+# IDE / Editör dosyaları
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS geçici dosyaları
+.DS_Store
+Thumbs.db
+
+# Docker volume verileri
+data/
+
+# Hata ayıklama (debug) dosyaları
+*.log
+__debug_bin*
+
+# Antigravity / AI araç dosyaları
+.antigravityrules
+.agents/

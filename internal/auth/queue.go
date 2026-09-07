@@ -40,3 +40,30 @@ func QueueVerificationEmail(ctx context.Context, rdb *redis.Client, email, token
 
 	return nil
 }
+
+// QueuePasswordResetEmail asenkron olarak şifre sıfırlama e-postası göndermek için
+// gerekli olan işi (job) Redis kuyruğuna (email_queue) ekler.
+// Worker uygulamasının bu kuyruktan işi alıp şifre sıfırlama linkini içeren
+// e-postayı ilgili kullanıcıya göndermesini sağlar.
+func QueuePasswordResetEmail(ctx context.Context, rdb *redis.Client, email, token string) error {
+
+	emailJob := EmailQueuePayload{
+		Type:  "send_password_reset_email",
+		Email: email,
+		Token: token,
+	}
+
+	jobJSON, marshalErr := json.Marshal(emailJob)
+	if marshalErr != nil {
+		return fmt.Errorf("failed to marshal email email job/E-posta işi hazırlanamadı: %w", marshalErr)
+	}
+
+	// "email_queue" isimli Redis listesinin solundan veriyi ekliyoruz.
+	// Worker (işçi) uygulaması ise bu listeyi BRPOP ile sağdan okuyacak.
+	pushErr := rdb.LPush(ctx, "email_queue", jobJSON).Err()
+	if pushErr != nil {
+		return fmt.Errorf("failed to push to Redis queue/Redis kuyruğuna gönderim başarısız oldu: %w", pushErr)
+	}
+
+	return nil
+}
