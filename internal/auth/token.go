@@ -26,10 +26,11 @@ func GenerateSecureToken() (string, error) {
 }
 
 // Jwt token oluşturma
-func JwtCreateToken(userID int, role string) (string, error) {
+func JwtCreateToken(userID int, email string, role string) (string, error) {
 	// Jwt Token içine koyacağımız verileri tutacak yapı.
 	claims := jwt.MapClaims{
 		"user_id": userID,
+		"email":   email,
 		"role":    role,
 		"exp":     time.Now().Add(24 * time.Hour).Unix(),
 		"iat":     time.Now().Unix(),
@@ -45,4 +46,23 @@ func JwtCreateToken(userID int, role string) (string, error) {
 
 }
 
-// İleride jwt token doğrulama da yapılabilir 
+// JwtVerifyToken, gelen token stringini doğrular ve içindeki verileri (claims) döndürür.
+func JwtVerifyToken(tokenString string) (jwt.MapClaims, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// Algoritmanın HMAC olduğunu doğrula
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, jwt.ErrSignatureInvalid
+		}
+		return secretKey, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		return claims, nil
+	}
+
+	return nil, jwt.ErrSignatureInvalid
+}

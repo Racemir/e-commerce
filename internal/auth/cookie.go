@@ -5,12 +5,15 @@ import (
 	"os"
 )
 
-// cookieName, session cookie'sinin adını döner.
-// SESSION_COOKIE_NAME ortam değişkeninden okunur, yoksa varsayılan "session_id" kullanılır.
+// cookieName, auth token cookie'sinin adını döner.
+// SESSION_COOKIE_NAME veya JWT_COOKIE_NAME ortam değişkeninden okunur, yoksa varsayılan "token" kullanılır.
 func cookieName() string {
-	name := os.Getenv("SESSION_COOKIE_NAME")
+	name := os.Getenv("JWT_COOKIE_NAME")
 	if name == "" {
-		name = "session_id"
+		name = os.Getenv("SESSION_COOKIE_NAME")
+	}
+	if name == "" {
+		name = "token"
 	}
 	return name
 }
@@ -21,7 +24,7 @@ func isProduction() bool {
 	return os.Getenv("APP_ENV") == "production"
 }
 
-// SetSessionCookie, tarayıcıya güvenli bir session cookie'si gönderir.
+// SetSessionCookie, tarayıcıya güvenli bir JWT auth cookie'si gönderir.
 // Bu cookie, her HTTP isteğinde otomatik olarak sunucuya geri gönderilir.
 //
 // Bayraklar:
@@ -29,10 +32,10 @@ func isProduction() bool {
 //   - SameSite=Strict: Başka sitelerden gelen isteklerde cookie gönderilmez (CSRF koruması)
 //   - Path="/": Cookie tüm yollarda geçerlidir
 //   - MaxAge=86400: 24 saat sonra tarayıcı cookie'yi siler
-func SetSessionCookie(w http.ResponseWriter, sessionID string) {
+func SetSessionCookie(w http.ResponseWriter, tokenString string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     cookieName(),
-		Value:    sessionID,
+		Value:    tokenString,
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   isProduction(), // Production'da true (HTTPS zorunlu), development'ta false
@@ -41,7 +44,7 @@ func SetSessionCookie(w http.ResponseWriter, sessionID string) {
 	})
 }
 
-// ClearSessionCookie, tarayıcıdaki session cookie'sini temizler.
+// ClearSessionCookie, tarayıcıdaki auth cookie'sini temizler.
 // MaxAge=-1 ayarlayarak tarayıcıya "bu cookie'yi hemen sil" der.
 // Logout işleminde kullanılır.
 func ClearSessionCookie(w http.ResponseWriter) {
@@ -56,7 +59,7 @@ func ClearSessionCookie(w http.ResponseWriter) {
 	})
 }
 
-// GetSessionCookie, gelen HTTP isteğindeki session cookie'sini okur.
+// GetSessionCookie, gelen HTTP isteğindeki auth cookie'sini okur.
 // Cookie yoksa veya boşsa hata döner.
 func GetSessionCookie(r *http.Request) (string, error) {
 	cookie, cookieError := r.Cookie(cookieName())

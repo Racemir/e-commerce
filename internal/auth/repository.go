@@ -138,19 +138,6 @@ func GetUserByID(ctx context.Context, db *pgxpool.Pool, id int) (*User, error) {
 	return &user, nil
 }
 
-func UpdateVerificationToken(ctx context.Context, db *pgxpool.Pool, oldToken, newToken string, exprise time.Time) error {
-
-	query := `UPDATE password_reset_tokens 
-		SET token = $1, expires_at = $2
-		WHERE token = $3`
-
-	_, execError := db.Exec(ctx, query, newToken, exprise, oldToken)
-	if execError != nil {
-		return execError
-	}
-	return nil
-}
-
 // CreatePasswordResetToken, password_reset_tokens tablosuna yeni bir token kaydeder.
 func CreatePasswordResetToken(ctx context.Context, db *pgxpool.Pool, userID int, token string, expiresAt time.Time) error {
 
@@ -217,3 +204,14 @@ func UpdateUserPassword(ctx context.Context, db *pgxpool.Pool, userID int, hashe
 	return nil
 }
 
+// CreateAdmin sadece test amaçlı admin oluşturmak için kullanılıyor.
+func CreateAdmin(ctx context.Context, db *pgxpool.Pool, name, email, password string) (int, error) {
+	query := `INSERT INTO users (name, email, password_hash, role, created_at, updated_at) VALUES ($1, $2, $3, 'admin', NOW(), NOW()) RETURNING id;`
+
+	var newID int
+	queryRowError := db.QueryRow(ctx, query, name, email, password).Scan(&newID)
+	if queryRowError != nil {
+		return 0, queryRowError
+	}
+	return newID, nil
+}

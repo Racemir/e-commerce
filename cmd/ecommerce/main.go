@@ -1,18 +1,23 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/Racemir/e-commerce/internal/auth"
 	"github.com/Racemir/e-commerce/internal/database"
 	"github.com/Racemir/e-commerce/internal/mail"
 	"github.com/Racemir/e-commerce/internal/server"
+	"github.com/charmbracelet/x/term"
+
 	gracefulshutdown "github.com/quii/go-graceful-shutdown"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func main() {
@@ -156,7 +161,30 @@ func main() {
 				log.Printf("Şifre sıfırlama e-postası gönderildi: %s\n", payload.Email)
 			}
 		}
+
 	case "create-admin":
+		fmt.Println("The admin account is shaking/Admin heasbı oluşturuluyor")
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print("Name: ")
+		name, _ := reader.ReadString('\n')
+		name = strings.TrimSpace(name)
+
+		fmt.Print("Email: ")
+		email, _ := reader.ReadString('\n')
+		email = strings.TrimSpace(email)
+
+		fmt.Print("Password: ")
+		bytePassword, readPasswordError := term.ReadPassword(os.Stdin.Fd())
+		if readPasswordError != nil {
+			log.Fatalf("\nAn error occurred while reading the password./Şifre okunurken bir hata oluştu")
+		}
+		password := string(bytePassword)
+		hashedPassword, passwordError := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if passwordError != nil {
+			log.Fatalf("An error occurred while encrypting the password/Şifre şifrenirken hata oluştu")
+		}
+		ctx := context.Background()
+		auth.CreateAdmin(ctx, dbPool, name, email, string(hashedPassword))
 	default:
 		log.Fatalf("Unknown command")
 	}

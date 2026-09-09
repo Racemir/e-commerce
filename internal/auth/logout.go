@@ -6,13 +6,6 @@ import (
 )
 
 // Logout, kullanıcının oturumunu sonlandırır.
-//
-// Akış:
-//  1. Cookie'den session ID'yi oku
-//  2. Redis'ten session kaydını sil
-//  3. Tarayıcıdaki cookie'yi temizle
-//
-// Bu işlem sonrası aynı session ID ile gelen istekler reddedilecektir.
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 
 	// Sadece POST methodu kabul edilir
@@ -21,17 +14,10 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Cookie'den session ID'yi oku
-	sessionID, cookieError := GetSessionCookie(r)
+	// Cookie'den auth token'ını oku
+	_, cookieError := GetSessionCookie(r)
 	if cookieError != nil {
 		http.Error(w, "No active session/Aktif oturum bulunamadı", http.StatusUnauthorized)
-		return
-	}
-
-	// Redis'ten session kaydını sil
-	deleteError := DeleteSession(r.Context(), h.RDB, sessionID)
-	if deleteError != nil {
-		http.Error(w, "Session deletion error/Oturum silme hatası", http.StatusInternalServerError)
 		return
 	}
 

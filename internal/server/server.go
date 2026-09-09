@@ -27,8 +27,8 @@ func SetupRoutes(db *pgxpool.Pool, rdb *redis.Client) *http.ServeMux {
 	mux.HandleFunc("/api/auth/register", authHandler.Register)
 	mux.HandleFunc("/api/auth/verify-email", authHandler.VerifyEmail)
 	mux.HandleFunc("/api/auth/login", authHandler.Login)
-	mux.HandleFunc("/api/auth/logout", authHandler.Logout)
-	mux.HandleFunc("/api/auth/me", authHandler.Me)
+	mux.Handle("/api/auth/logout", authHandler.RequireAuth(http.HandlerFunc(authHandler.Logout)))
+	mux.Handle("/api/auth/me", authHandler.RequireAuth(http.HandlerFunc(authHandler.Me)))
 	mux.HandleFunc("/api/auth/reset-password", authHandler.ResetPassword)
 	mux.HandleFunc("/api/auth/forgot-password", authHandler.ForgotPassword)
 
