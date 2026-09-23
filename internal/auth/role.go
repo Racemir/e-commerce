@@ -8,6 +8,11 @@ type contextKey string
 
 const userContextKey = contextKey("user")
 
+// UserFromContext, harici paketlerin JWT middleware tarafından
+// context'e yazılan *User değerine erişmesi için dışa açık context anahtarıdır.
+const UserFromContext = userContextKey
+
+
 // AdminOnly, sadece admin rolüne sahip kullanıcıların geçişine izin verir.
 func AdminOnly(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

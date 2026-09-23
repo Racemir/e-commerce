@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/Racemir/e-commerce/internal/auth"
+	"github.com/Racemir/e-commerce/internal/orders"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )
@@ -19,19 +20,32 @@ type Healthresponse struct {
 func SetupRoutes(db *pgxpool.Pool, rdb *redis.Client) *http.ServeMux {
 	// Gelen HTTP isteklerinin URL yolarına bakarak fonksiyonlara yönlendirir.
 	mux := http.NewServeMux()
-
 	authHandler := auth.NewHandler(db, rdb)
-	// Tarayıcıdan girilen adres "/api/health" bu isteği özel fonksiyona (handler) gönderir.
+	ordersHandler := orders.NewHandler(db)
+
+	// Normal Rotalar
 	mux.HandleFunc("/", homePageHandler)
 	mux.HandleFunc("/api/health", HealthHandler)
 	mux.HandleFunc("/api/auth/register", authHandler.Register)
 	mux.HandleFunc("/api/auth/verify-email", authHandler.VerifyEmail)
 	mux.HandleFunc("/api/auth/login", authHandler.Login)
-	mux.Handle("/api/auth/logout", authHandler.RequireAuth(http.HandlerFunc(authHandler.Logout)))
-	mux.Handle("/api/auth/me", authHandler.RequireAuth(http.HandlerFunc(authHandler.Me)))
 	mux.HandleFunc("/api/auth/reset-password", authHandler.ResetPassword)
 	mux.HandleFunc("/api/auth/forgot-password", authHandler.ForgotPassword)
+	mux.HandleFunc("/api/auth/refresh", authHandler.Refresh)
 
+
+	// Korumalı Rotalar
+	mux.Handle("/api/auth/me", authHandler.RequireAuth(http.HandlerFunc(authHandler.Me)))
+	mux.Handle("/api/auth/logout", authHandler.RequireAuth(http.HandlerFunc(authHandler.Logout)))
+	mux.Handle("GET /api/orders/{id}", authHandler.RequireAuth(http.HandlerFunc(ordersHandler.GetOrder)))
+
+	// Sipariş Rotaları (Resource Ownership korumalı)
+	mux.Handle("/api/orders/{id}", authHandler.RequireAuth(http.HandlerFunc(ordersHandler.GetOrder)))
+
+	// Admin Rotaları
+	adminMux := http.NewServeMux()
+
+	mux.Handle("/api/admin/", authHandler.RequireAuth(auth.AdminOnly(adminMux)))
 	return mux
 }
 

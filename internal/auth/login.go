@@ -3,6 +3,7 @@ package auth
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 )
 
 // email ve şifre al
@@ -31,17 +32,19 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "The email and password fields cannot be left blank/E-posta ve şifre alanları boş bırakılamaz", http.StatusBadRequest)
 		return
 	}
+
 	// Email veritabanında kontrol et. (var ise devam et)
 	isEmailTaken, checkDuplicateEmailError := CheckDuplicateEmail(r.Context(), h.DB, req.Email)
 	if checkDuplicateEmailError != nil {
 		http.Error(w, "Email check error/E-posta kontrol hatası", http.StatusInternalServerError)
 		return
 	}
-	if isEmailTaken == false {
+	if !isEmailTaken {
 		http.Error(w, "Email not found/E-posta bulunamadı", http.StatusUnauthorized)
 		return
 	}
 
+	// Verilen email'in kullanıcı bilgilerini al (id, email, role, vb.)
 	user, getUserError := GetUserByEmail(r.Context(), h.DB, req.Email)
 	if getUserError != nil {
 		http.Error(w, "User not found/Kullanıcı bulunamadı", http.StatusUnauthorized)
@@ -54,25 +57,46 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Password check error/Şifre kontrol hatası", http.StatusInternalServerError)
 		return
 	}
-	if match == false {
+	if !match {
 		http.Error(w, "Invalid password/Geçersiz şifre", http.StatusUnauthorized)
 		return
 	}
 
-	// Şifre eşleşirse jwt token oluştur.
-	// SHA256 , user_id, email, role , iss
-	token, jwtError := JwtCreateToken(user.ID, user.Email, user.Role)
-	if jwtError != nil {
+	// Access Token oluştur (15 dakika)
+	accessToken, accessTokenError := JwtCreateAccessToken(user.ID, user.Email, user.Role)
+	if accessTokenError != nil {
 		http.Error(w, "Token creation error/Token oluşturma hatası", http.StatusInternalServerError)
 		return
 	}
 
-	// Tarayıcıya güvenli auth cookie'sini (JWT) gönder
-	SetSessionCookie(w, token)
+	// Her refresh token benzersiz bir ID taşır (Rotation için)
+	tokenID, tokenIDError := GenerateSecureToken()
+	if tokenIDError != nil {
+		http.Error(w, "Token ID generation error/Token ID oluşturma hatası", http.StatusInternalServerError)
+		return
+	}
 
-	// Tokenı response body'e koy.
+	// Refresh Token oluştur (7 gün)
+	refreshToken, refreshTokenError := JwtCreateRefreshToken(user.ID, tokenID)
+	if refreshTokenError != nil {
+		http.Error(w, "Refresh token creation error/Refresh token oluşturma hatası", http.StatusInternalServerError)
+		return
+	}
+
+	// Refresh Token'ı Redis'e kaydet (7 gün TTL)
+	storeError := StoreRefreshToken(r.Context(), h.RDB, user.ID, tokenID, refreshToken, 7*24*time.Hour)
+	if storeError != nil {
+		http.Error(w, "Session store error/Oturum kayıt hatası", http.StatusInternalServerError)
+		return
+	}
+
+	// Cookie'leri tarayıcıya gönder
+	SetAccessTokenCookie(w, accessToken)
+	SetRefreshTokenCookie(w, refreshToken)
+
+	// Başarılı giriş yanıtı
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
-		"token": token,
+		"message": "Login successful/Giriş başarılı",
 	})
 }
